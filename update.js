@@ -1,4 +1,5 @@
-export function update({ data, redis, table }, key, newData) {
+export function update(info, key, newData) {
+  const { data, redis, table } = info
   const updateData = JSON.parse(JSON.stringify(newData))
   if (Array.isArray(updateData)) {
     updateData.forEach(newData => {

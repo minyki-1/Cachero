@@ -67,17 +67,17 @@ function sortData(order, key, data) {
   });
 }
 
-function interpretColumn({ table, tableColumns }, columnForm, data) {
+function interpretColumn({ tableName, tableColumns }, columnForm, data) {
   const columnList = []
 
   columnForm.forEach((column) => {
     const dotResult = column.match(/\.(\w+)/);
-    const isIncludeNotTableName = column.includes(".*") && !column.includes(table);
+    const isIncludeNotTableName = column.includes(".*") && !column.includes(tableName);
     const isIncludeAS = column.includes(" AS ") ? " AS " : null || column.includes(" as ") ? " as " : null
     let resultColumn = column;
     if (isIncludeAS) {
       resultColumn = column.split(isIncludeAS)[1]
-    } else if (column === `${table}.*` || column === "*") {
+    } else if (column === `${tableName}.*` || column === "*") {
       return columnList.push(...tableColumns)
     } else if (isIncludeNotTableName) {
       throw Error(`You can't send column like this: anotherTable.*`);
@@ -99,7 +99,7 @@ function interpretColumn({ table, tableColumns }, columnForm, data) {
   });
 }
 
-async function selectQueryResult({ pool, table, deleted, cachedKey, data, redis }, queryForm, key) {
+async function selectQueryResult({ pool, tableName, deleted, cachedKey, data, redis }, queryForm, key) {
   const where = queryForm.where ? queryForm.where.result.map((condition) => {
     const [key, operator, value] = queryForm.where[condition]
     if (result === "&&" || result === "||") return result
@@ -107,13 +107,13 @@ async function selectQueryResult({ pool, table, deleted, cachedKey, data, redis 
     else if (Array.isArray(value)) return key + operator + `(${value.join(',')})`
   }).join(" ") : ""
   const join = queryForm.join ? "JOIN " + queryForm.join : ""
-  const columnList = queryForm.column.join(", ") ?? `${table}.*`
+  const columnList = queryForm.column.join(", ") ?? `${tableName}.*`
   const order = queryForm.order ? "ORDER BY " + queryForm.order.join(", ") : ""
   const limit = queryForm.limit ? "LIMIT " + queryForm.limit : ""
   const offset = queryForm.offset ? "OFFSET " + queryForm.offset : ""
   const result = await pool.query(`
   SELECT ${columnList}
-  FROM ${table}
+  FROM ${tableName}
   ${join}
   ${where}
   ${order}
@@ -136,13 +136,13 @@ async function selectQueryResult({ pool, table, deleted, cachedKey, data, redis 
       data.push(newObj); // 새로운 오브젝트를 추가
     }
   });
-  if (redis) redis.set(table, JSON.stringify(data))
+  if (redis) redis.set(tableName, JSON.stringify(data))
   return result.rows
 }
 
-function checkQueryFormVaild({ table }, queryForm) {
+function checkQueryFormVaild({ tableName }, queryForm) {
   queryForm.column.forEach((column) => {
-    if (column.includes(".*") && !column.includes(table)) {
+    if (column.includes(".*") && !column.includes(tableName)) {
       throw Error(`You can't send column like this: anotherTable.*`);
     }
   })

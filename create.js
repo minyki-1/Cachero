@@ -1,4 +1,5 @@
-export function create({ data, redis, table }, newData) {
+export function create(info, newData) {
+  const { data, redis, table } = info
   if (typeof newData === 'object' && newData !== null) {
     const result = data.push(newData)
     if (redis) redis.set(table, JSON.stringify(result))
