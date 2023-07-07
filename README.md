@@ -14,6 +14,8 @@ const result = await cachero.select({ column: ['*'] }, 'key')
 
 ## Installation
 
+[NPM](https://www.npmjs.com/package/cachero)
+
 ```console
 $ npm install cachero
 ```
