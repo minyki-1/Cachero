@@ -88,7 +88,7 @@ Create, Update, Delete Example
 ```js
 cachero.create({ id:'0', title:'new data' })
 
-cachero.update(id, { id:'0', title:'update data' })
+cachero.update('id', { id:'0', title:'update data' })
 
 cachero.delete({ key:'id', value:'0' })
 ```
