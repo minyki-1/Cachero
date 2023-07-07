@@ -84,13 +84,15 @@ postCachero.select({
 
 <br/>
 
-Create, Update, Delete Example
+Create, Update, Delete, Scheduler Example
 ```js
 cachero.create({ id:'0', title:'new data' })
 
 cachero.update('id', { id:'0', title:'update data' })
 
 cachero.delete({ key:'id', value:'0' })
+
+cachero.scheduler([[12,0]], cachero.batchSave('id'))
 ```
 
 <!-- ## Prototype -->
