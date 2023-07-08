@@ -1,10 +1,10 @@
-import { create } from "./create.js"
-import { deleteData } from "./delete.js"
-import { select } from "./select.js"
-import { update } from "./update.js"
-import { batchSave } from "./batchSave.js"
+const { create } = require("./create.js")
+const { deleteData } = require("./delete.js")
+const { select } = require("./select.js")
+const { update } = require("./update.js")
+const { batchSave } = require("./batchSave.js")
 
-export const createCachero = () => {
+const createCachero = () => {
   const info = { pool: null, redis: null, data: [], tableName: "", cachedKey: [], count: 0, deleted: [], tableColumns: [] }
   return {
     scheduler,
@@ -54,3 +54,5 @@ function scheduler(times, fn) {
 
   return { cancel };
 }
+
+exports.createCachero = createCachero

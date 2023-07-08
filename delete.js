@@ -1,4 +1,4 @@
-export function deleteData(info, { key, value }) {
+function deleteData(info, { key, value }) {
   const { data, deleted, redis, table } = info
   const index = data.findIndex(obj => obj[key] === value); // 특정 id를 가진 오브젝트의 인덱스를 찾음
 
@@ -8,3 +8,5 @@ export function deleteData(info, { key, value }) {
     if (redis) redis.set(table, JSON.stringify(data))
   }
 }
+
+exports.deleteData = deleteData

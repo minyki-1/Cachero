@@ -1,4 +1,4 @@
-export const select = async (info, queryForm, key) => {
+const select = async (info, queryForm, key) => {
   const { data, count, cachedKey } = info;
 
   checkQueryFormVaild(info, queryForm)
@@ -218,3 +218,5 @@ function filterData(data, conditions) {
     return eval(resultCon)
   })
 }
+
+exports.select = select

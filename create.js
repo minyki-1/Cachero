@@ -1,4 +1,4 @@
-export function create(info, newData) {
+function create(info, newData) {
   const { data, redis, table } = info
   if (typeof newData === 'object' && newData !== null) {
     const result = data.push(newData)
@@ -7,3 +7,5 @@ export function create(info, newData) {
     throw Error("Create require data that is an object");
   }
 }
+
+exports.create = create

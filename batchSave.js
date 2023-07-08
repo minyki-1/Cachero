@@ -1,4 +1,4 @@
-export async function batchSave(info, key, preloadData) {
+async function batchSave(info, key, preloadData) {
   const { data, cachedKey } = info
 
   upsertData(info, key)
@@ -48,3 +48,5 @@ async function deleteData({ deleted, tableName, pool }) {
 
   await pool.query(deleteQuery, queryValues);
 }
+
+exports.batchSave = batchSave

@@ -1,4 +1,4 @@
-export function update(info, key, newData) {
+function update(info, key, newData) {
   const { data, redis, table } = info
   const updateData = JSON.parse(JSON.stringify(newData))
   if (Array.isArray(updateData)) {
@@ -22,3 +22,5 @@ function mergeData(data, key, updateData) {
     return data.push(updateData); // 새로운 오브젝트를 추가
   }
 }
+
+exports.update = update
