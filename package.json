@@ -1,6 +1,6 @@
 {
   "name": "cachero",
-  "version": "1.0.0",
+  "version": "1.0.2",
   "description": "Enable cache all CRUD operations, a library for [Node.js](http://nodejs.org).",
   "main": "index.js",
   "scripts": {
@@ -11,7 +11,7 @@
   "keywords": [
     "cachero",
     "cache",
-    "api",
+    "express",
     "library",
     "upgrade"
   ]

@@ -67,8 +67,7 @@ postCachero.select({
   column: [
     'post.*',
     'COALESCE(ARRAY_LENGTH(liked_user, 1), 0) AS like_count',
-    'users.name AS owner_name',
-    'users.profile_img AS owner_profile_img'
+    'users.name AS owner_name'
   ],
   order: ['like_count DESC', 'created_at DESC'],
   where: {
