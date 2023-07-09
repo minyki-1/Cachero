@@ -14,7 +14,7 @@ const select = async (info, queryForm, key) => {
 
   if ("column" in queryForm) resultData = interpretColumn(info, queryForm.column, resultData)
 
-  if ("order" in queryForm) interpretOrder(queryForm.order, resultData)
+  if ("order" in queryForm) resultData = interpretOrder(queryForm.order, resultData)
 
   if ("where" in queryForm) resultData = filterData(resultData, queryForm.where)
 
@@ -26,45 +26,44 @@ const select = async (info, queryForm, key) => {
 }
 
 function interpretOrder(orderForm, data) {
-  orderForm.forEach((key) => {
-    const order = key.split(" ")
-    if (order.length === 2) {
-      if (order[1] === "DESC") sortData("DESC", order[0], data)
-      else sortData("ASC", order[0], data)
-    } else if (order.length === 1) {
-      sortData("ASC", order[0], data)
-    } else {
-      throw Error("Invalid structure of order")
-    }
-  })
+  return data.sort((a, b) => compareData(a, b, orderForm));
 }
 
-function sortData(order, key, data) {
-  return data.sort((a, b) => {
-    const x = a[key];
-    const y = b[key];
+function compareData(a, b, keys, index = 0) {
+  const keyArray = keys[index].split(" ")
+  const order = keyArray.length === 2 ? keyArray[1] : "ASC"
+  const key = keyArray[0];
+  const x = a[key];
+  const y = b[key];
 
-    if (typeof x === 'number' && typeof y === 'number') {
-      if (order === "DESC") return y - x;
-      else return x - y;
-    } else if (isDateString(x) && isDateString(y)) {
-      // @ts-ignore
-      if (order === "DESC") return new Date(y) - new Date(x);
-      // @ts-ignore
-      else return new Date(x) - new Date(y);
+  if (a[key] === b[key]) {
+    if (index < keys.length - 1) {
+      return compareData(a, b, keys, index + 1);
+    } else {
+      return 0;
     }
-    else {
-      if (order === "DESC") {
-        if (x > y) return -1;
-        else if (x < y) return 1;
-        else return 0;
-      } else {
-        if (x < y) return -1;
-        else if (x > y) return 1;
-        else return 0;
-      }
+  }
+
+  if (typeof x === 'number' && typeof y === 'number') {
+    if (order === "DESC") return y - x;
+    else return x - y;
+  } else if (isDateString(x) && isDateString(y)) {
+    // @ts-ignore
+    if (order === "DESC") return new Date(y) - new Date(x);
+    // @ts-ignore
+    else return new Date(x) - new Date(y);
+  }
+  else {
+    if (order === "DESC") {
+      if (x > y) return -1;
+      else if (x < y) return 1;
+      else return 0;
+    } else {
+      if (x < y) return -1;
+      else if (x > y) return 1;
+      else return 0;
     }
-  });
+  }
 }
 
 function interpretColumn({ tableName, tableColumns }, columnForm, data) {

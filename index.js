@@ -7,7 +7,7 @@ const { batchSave } = require("./batchSave.js")
 const createCachero = () => {
   const info = { pool: null, redis: null, data: [], tableName: "", cachedKey: [], count: 0, deleted: [], tableColumns: [] }
   return {
-    scheduler,
+    scheduler: (times, key, preloadData) => scheduler(info, times, key, preloadData),
     setting: (data) => setting(info, data),
     select: (selectData, key) => select(info, selectData, key),
     create: (newData) => { create(info, newData); info.count++; },
@@ -34,7 +34,7 @@ async function setting(info, data) {
   console.log(`Cachero(${table}) setting completed`)
 }
 
-function scheduler(times, fn) {
+function scheduler(info, times, key, preloadData) {
   const intervalId = setInterval(() => {
     const now = new Date();
     const currentHour = now.getHours();
@@ -44,7 +44,7 @@ function scheduler(times, fn) {
       const [hour, minute] = times[i];
 
       if (currentHour === hour && currentMinute === minute) {
-        fn();
+        batchSave(info, key, preloadData);
         break;
       }
     }
