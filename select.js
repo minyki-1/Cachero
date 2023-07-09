@@ -1,28 +1,27 @@
 const select = async (info, queryForm, key) => {
-  const { data, count, cachedKey } = info;
+  const { data, count } = info;
 
   checkQueryFormVaild(info, queryForm)
 
-  const cache_validation = cachedKey.includes(key) || data.length === count
+  const cachedKeyValid = info.cachedKey ? info.cachedKey.includes(key) : true;
 
-  if (!cache_validation) {
-    const result = await selectQueryResult(info, queryForm, key)
-    return result
+  if (cachedKeyValid || data.length === count) {
+    let resultData = JSON.parse(JSON.stringify(data));
+
+    if ("column" in queryForm) resultData = interpretColumn(info, queryForm.column, resultData)
+
+    if ("order" in queryForm) resultData = interpretOrder(queryForm.order, resultData)
+
+    if ("where" in queryForm) resultData = filterData(resultData, queryForm.where)
+
+    if ("offset" in queryForm) resultData = resultData.slice(queryForm.offset)
+
+    if ("limit" in queryForm) resultData = resultData.slice(0, queryForm.limit)
+
+    if (resultData.length > 0) return resultData
   }
-
-  let resultData = JSON.parse(JSON.stringify(data));
-
-  if ("column" in queryForm) resultData = interpretColumn(info, queryForm.column, resultData)
-
-  if ("order" in queryForm) resultData = interpretOrder(queryForm.order, resultData)
-
-  if ("where" in queryForm) resultData = filterData(resultData, queryForm.where)
-
-  if ("offset" in queryForm) resultData = resultData.slice(queryForm.offset)
-
-  if ("limit" in queryForm) resultData = resultData.slice(0, queryForm.limit)
-
-  return resultData
+  const result = await selectQueryResult(info, queryForm, key)
+  return result
 }
 
 function interpretOrder(orderForm, data) {
@@ -99,25 +98,39 @@ function interpretColumn({ tableName, tableColumns }, columnForm, data) {
 }
 
 async function selectQueryResult({ pool, tableName, deleted, cachedKey, data, redis }, queryForm, key) {
-  const where = queryForm.where ? queryForm.where.result.map((condition) => {
+  const queryProps = []
+  const where = queryForm.where ? "WHERE " + queryForm.where.result.map((condition) => {
+    if (condition === "&&" || condition === "||") return condition
+    if (!(condition in queryForm.where) || queryForm.where[condition].length !== 3) throw Error("Result contains undefined conditions")
     const [key, operator, value] = queryForm.where[condition]
-    if (result === "&&" || result === "||") return result
-    else if (operator !== "IN" || operator !== "NOT IN") return queryForm.where[condition].join(" ")
-    else if (Array.isArray(value)) return key + operator + `(${value.join(',')})`
+    if (operator === "IN" || operator === "NOT IN") {
+      return key + operator + `(${Array.isArray(value) ? value.map((valueData) => {
+        queryProps.push(valueData);
+        return `$${queryProps.length}`;
+      }).join(',') : () => {
+        queryProps.push(value);
+        return `$${queryProps.length}`;
+      }})`
+    } else {
+      queryProps.push(value)
+      return `${key} ${operator} $${queryProps.length}`
+    }
   }).join(" ") : ""
+
   const join = queryForm.join ? "JOIN " + queryForm.join : ""
-  const columnList = queryForm.column.join(", ") ?? `${tableName}.*`
+  const columnList = queryForm.column ? queryForm.column.join(", ") : '*'
   const order = queryForm.order ? "ORDER BY " + queryForm.order.join(", ") : ""
   const limit = queryForm.limit ? "LIMIT " + queryForm.limit : ""
   const offset = queryForm.offset ? "OFFSET " + queryForm.offset : ""
   const result = await pool.query(`
-  SELECT ${columnList}
-  FROM ${tableName}
-  ${join}
-  ${where}
-  ${order}
-  ${limit} ${offset};
-  `);
+    SELECT ${columnList}
+    FROM ${tableName}
+    ${join}
+    ${where}
+    ${order}
+    ${limit}
+    ${offset};
+  `, queryProps);
 
   deleted.forEach(({ key, value }) => {
     result.rows.forEach((resultData, index) => {
@@ -160,7 +173,12 @@ function isDateString(inputString) {
 
 
 function evaluateCondition(condition, item) {
-  const [key, operator, value] = condition;
+  const [condKey, operator, value] = condition;
+
+  if (condKey.includes(" AS ") || condKey.includes(" as ")) throw Error("Where's condition cannot contain 'AS'");
+
+  const key = condKey.split('.')[0]
+  
   function checkLikeData() {
     const checkEndData = item[key][0] === "%";
     const checkStartData = item[key][item[key].length - 1] === "%";
