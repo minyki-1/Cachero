@@ -1,12 +1,15 @@
-function deleteData(info, { key, value }) {
+function deleteData(info, condition) {
   const { data, deleted, redis, table } = info
-  const index = data.findIndex(obj => obj[key] === value); // 특정 id를 가진 오브젝트의 인덱스를 찾음
+  data.forEach((obj, index) => {
+    Object.keys(condition).forEach(key => {
+      if (obj[key] === condition[key]) {
+        deleted.push({ [key]: condition[key] })
+        data.splice(index, 1);
+      }
+    })
+  });
 
-  if (index !== -1) {
-    deleted.push({ key, value })
-    data.splice(index, 1); // 해당 인덱스의 오브젝트를 배열에서 제거
-    if (redis) redis.set(table, JSON.stringify(data))
-  }
+  if (redis) redis.set(table, JSON.stringify(data))
 }
 
 exports.deleteData = deleteData

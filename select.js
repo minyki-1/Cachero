@@ -12,20 +12,20 @@ const select = async (info, queryForm, key) => {
 
     if ("order" in queryForm) resultData = interpretOrder(queryForm.order, resultData)
 
-    if ("where" in queryForm) resultData = filterData(resultData, queryForm.where)
+    if ("where" in queryForm) resultData = interpretWhere(resultData, queryForm.where)
 
-    if ("offset" in queryForm) resultData = resultData.slice(queryForm.offset)
+    if ("offset" in queryForm) resultData = resultData?.slice(queryForm.offset)
 
-    if ("limit" in queryForm) resultData = resultData.slice(0, queryForm.limit)
+    if ("limit" in queryForm) resultData = resultData?.slice(0, queryForm.limit)
 
-    if (resultData.length > 0) return resultData
+    if (resultData && resultData.length > 0) return resultData
   }
   const result = await selectQueryResult(info, queryForm, key)
   return result
 }
 
 function interpretOrder(orderForm, data) {
-  return data.sort((a, b) => compareData(a, b, orderForm));
+  return data?.sort((a, b) => compareData(a, b, orderForm));
 }
 
 function compareData(a, b, keys, index = 0) {
@@ -86,15 +86,21 @@ function interpretColumn({ tableName, tableColumns }, columnForm, data) {
     return columnList.push(resultColumn)
   })
 
-  return data.map((obj) => {
+  let isIncorrectColumn = false
+  const result = data.map((obj) => {
     const filteredObj = {};
     columnList.forEach((key) => {
-      if (obj.hasOwnProperty(key)) {
+      if (obj.hasOwnProperty(key)) { // TODO: 프로포티값이 없을 경우 어떻게할것인지 추가
         filteredObj[key] = obj[key];
+      } else {
+        isIncorrectColumn = true
       }
     });
     return filteredObj;
   });
+
+  if (isIncorrectColumn) return [];
+  return result
 }
 
 async function selectQueryResult({ pool, tableName, deleted, cachedKey, data, redis }, queryForm, key) {
@@ -178,7 +184,7 @@ function evaluateCondition(condition, item) {
   if (condKey.includes(" AS ") || condKey.includes(" as ")) throw Error("Where's condition cannot contain 'AS'");
 
   const key = condKey.split('.')[0]
-  
+
   function checkLikeData() {
     const checkEndData = item[key][0] === "%";
     const checkStartData = item[key][item[key].length - 1] === "%";
@@ -220,8 +226,8 @@ function evaluateCondition(condition, item) {
   }
 }
 
-function filterData(data, conditions) {
-  return data.filter((filterData) => {
+function interpretWhere(data, conditions) {
+  return data?.filter((filterData) => {
     const totalCondition = {}
     Object.keys(conditions).forEach((key) => {
       if (key === "result") return;
