@@ -16,8 +16,7 @@
     "rootDir": "src",
     "skipLibCheck": true,
     "strict": true,
-    "traceResolution": false,
-    "noEmit": true
+    "traceResolution": false
   },
   "compileOnSave": false,
   "exclude": ["node_modules", "dist"],
