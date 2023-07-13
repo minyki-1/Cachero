@@ -1,6 +1,6 @@
 import { ICacheInfo } from "types"
 
-export async function batchSave<T>(info:ICacheInfo<T>, preloadData:T[]) {
+export async function batchSave<T>(info:ICacheInfo<T>, preloadData?:T[]) {
   const { data, cachedKey } = info
 
   upsertData<T>(info)
@@ -40,18 +40,13 @@ async function upsertData<T>(info:ICacheInfo<T>) {
 async function deleteData<T>(info:ICacheInfo<T>) {
   const { deleted, tableName, queryRunner } = info
   if(!queryRunner || !tableName) throw Error("You should setting before use select");
-  const deleteData:{[key:string]:T[keyof T][]} = {}
-  for (const [key, value] of Object.entries(deleted)) {
-    if (key in deleteData) deleteData[key].push(value)
-    else deleteData[key] = [value]
-  }
   const deleteQuery = `
     DELETE FROM ${tableName}
-    WHERE ${Object.keys(deleteData).map((key, index1) => `${key} IN (${deleteData[key].map((_, index2) => `$${(index1 * deleteData[key].length) + (index2 + 1)}`).join(', ')})`).join(' OR ')};
+    WHERE ${Object.keys(deleted).map((key, index1) => `${key} IN (${deleted[key].map((_, index2) => `$${(index1 * deleted[key].length) + (index2 + 1)}`).join(', ')})`).join(' OR ')};
   `
   const queryValues:T[keyof T][] = []
-  Object.keys(deleteData).forEach((key) => {
-    queryValues.push(...deleteData[key])
+  Object.keys(deleted).forEach((key) => {
+    queryValues.push(...deleted[key])
   })
 
   await queryRunner(deleteQuery, queryValues);

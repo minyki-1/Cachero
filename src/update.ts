@@ -1,5 +1,8 @@
-export function update(info, key, newData) {
-  const { data, redis, table } = info
+import { ICacheInfo } from "types";
+
+export function update<T>(info:ICacheInfo<T>, newData:T[]) {
+  const { data, redis, tableName, refKey } = info
+  if(!tableName || !refKey) throw Error("You should setting before use select");
   const updateData = JSON.parse(JSON.stringify(newData))
   if (Array.isArray(updateData)) {
     updateData.forEach(newData => {
@@ -11,7 +14,7 @@ export function update(info, key, newData) {
     throw Error("Update require data that is an object or array");
   }
 
-  if (redis) redis.set(table, JSON.stringify(data))
+  if (redis) redis(table, JSON.stringify(data))
 }
 
 function mergeData(data, key, updateData) {

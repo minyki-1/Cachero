@@ -1,9 +1,8 @@
-export function create(info, newData) {
-  const { data, redis, table } = info
-  if (typeof newData === 'object' && newData !== null) {
-    const result = data.push(newData)
-    if (redis) redis.set(table, JSON.stringify(result))
-  } else {
-    throw Error("Create require data that is an object");
-  }
+import { ICacheInfo } from "types";
+
+export function create<T>(info:ICacheInfo<T>, newData:T) {
+  const { data, redis, tableName } = info
+  if(!tableName) throw Error("You should setting before use select");
+  const result = data.push(newData)
+  if (redis) redis(tableName, JSON.stringify(result))
 }

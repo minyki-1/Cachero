@@ -23,21 +23,21 @@ export const createCachero = <T>() => {
      * @Tip Scheduler can set multiple time zones -
      * [[1,0],[12,0]] = 01:00, 12:00
      * */
-    scheduler: (times:number[][], key:keyof T, preloadData:T[]) => scheduler<T>(info, times, key, preloadData),
+    scheduler: (times:number[][], key:keyof T, preloadData:T[]) => scheduler<T>(info, times, preloadData),
 
     /** You should setting before use select | create | update | delete*/
-    setting: (data:SettingParams<T>) => setting(info, data),
+    setting: (data:SettingParams<T>) => setting<T>(info, data),
 
     /** @Tip Recommend importing columns of all data at once for data reuse*/
-    select: (queryForm:QueryForm = {column:["*"]}, key:string | null = null) => select(info, queryForm, key),
+    select: (queryForm:QueryForm = {column:["*"]}, key:string | null = null) => select<T>(info, queryForm, key),
 
     /** @Tip Newly created data can be delivered immediately*/
-    create: (newData:T[]) => { create(info, newData); info.count++; },
+    create: (newData:T) => { create<T>(info, newData); info.count++; },
 
     /** @Tip Updated data will be applied immediately*/
-    update: (key:string, newData:T[]) => { update(info, key, newData); info.count--; },
-    delete: (condition:keyof T) => deleteData(info, condition),
-    batchSave: (key:string, preloadData:T[]) => batchSave(info, key, preloadData),
+    update: (newData:T[]) => { update<T>(info, newData); info.count--; },
+    delete: (condition:{[key:string]: T[keyof T]}) => deleteData(info, condition),
+    batchSave: (preloadData:T[]) => batchSave(info, preloadData),
   }
 }
 
@@ -60,7 +60,7 @@ async function setting<T>(info:ICacheInfo<T>, data:SettingParams<T>) {
   console.log(`Cachero(${table}) setting completed`)
 }
 
-function scheduler<T>(info:ICacheInfo<T>, times:number[][], key:keyof T, preloadData:T[]) {
+function scheduler<T>(info:ICacheInfo<T>, times:number[][], preloadData:T[]) {
   const intervalId = setInterval(() => {
     const now = new Date();
     const currentHour = now.getHours();
@@ -70,7 +70,7 @@ function scheduler<T>(info:ICacheInfo<T>, times:number[][], key:keyof T, preload
       const [hour, minute] = times[i];
 
       if (currentHour === hour && currentMinute === minute) {
-        batchSave(info, key, preloadData);
+        batchSave(info, preloadData);
         break;
       }
     }

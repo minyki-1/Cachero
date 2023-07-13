@@ -6,7 +6,7 @@ export interface ICacheInfo<T> {
   cachedKey: string[];
   count: number;
   deleted: {
-    [key:string]: T[keyof T]
+    [key:string]: T[keyof T][]
   };
   tableColumns: string[];
   refKey: null | keyof T;

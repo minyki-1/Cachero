@@ -58,10 +58,8 @@ function compareData<T>(a:T, b:T, keys:string[], index = 0) {
     if (order === "DESC") return y - x;
     else return x - y;
   } else if (isDate) {
-    // @ts-ignore
-    if (order === "DESC") return new Date(y) - new Date(x);
-    // @ts-ignore
-    else return new Date(x) - new Date(y);
+    if (order === "DESC") return new Date(y).getTime() - new Date(x).getTime();
+    else return new Date(x).getTime() - new Date(y).getTime();
   }
   else {
     if (order === "DESC") {
@@ -102,7 +100,7 @@ function interpretColumn<T>(info:ICacheInfo<T>, columnForm:string[], data:T[]) {
   const result = data.map((obj) => {
     const filteredObj = {} as T;
     columnList.forEach((key) => {
-      if ((obj as Object).hasOwnProperty(key)) {
+      if (key in (obj as Object)) {
         filteredObj[key as keyof T] = obj[key as keyof T];
       } else {
         isIncorrectColumn = true
@@ -164,7 +162,7 @@ async function selectQueryRun<T>(info:ICacheInfo<T>, queryForm:QueryForm) {
 
   for (const [key, value] of Object.entries(deleted)) {
     result.rows.forEach((data, index) => {
-      if (data[key as keyof T] === value) delete result.rows[index]
+      if (value.includes(data[key as keyof T])) delete result.rows[index]
     })
   }
   const selectResult:T[] = JSON.parse(JSON.stringify(result.rows))
