@@ -12,6 +12,8 @@ await cachero.setting({ table, preloadData, pool, redis })
 const result = await cachero.select({ column: ['*'] }, 'key')
 ```
 
+<br>
+
 ## Installation
 
 [NPM](https://www.npmjs.com/package/cachero)
@@ -20,12 +22,17 @@ const result = await cachero.select({ column: ['*'] }, 'key')
 $ npm install cachero
 ```
 
+<br>
+
 ## Features
 
   * Low latency CRUD
+  * Easy CRUD cache
   * Reduces server load
   * Look-Aside + Write-Back caching
   * Easier than most ORM
+
+<br>
 
 ## Example
 Express Example
@@ -45,8 +52,12 @@ app.get('/post', function (req, res) {
   const cachedKey = req.originalUrl
 
   const result = await postCachero.select({ 
-    column: ['*'] 
+    column: ['*']
   }, cachedKey)
+  /* 
+    Cached Key is used to determine whether the value is valid when reading multiple data. 
+    You do not need to use it to get one data that you have already cached.
+  */
 
   res.json(result)
 })
@@ -55,7 +66,7 @@ app.listen(3000, async () => {
   await pool.connect()
   await redis.connect()
 
-  await postCachero.setting({ table: 'post', pool, redis })
+  await postCachero.setting({ table: 'post', queryRunner: pool, redis })
 });
 ```
 
@@ -87,11 +98,11 @@ Create, Update, Delete, Scheduler Example
 ```js
 cachero.create({ id:'0', title:'new data' })
 
-cachero.update('id', { id:'0', title:'update data' })
+cachero.update({ id:'0', title:'update data' })
 
 cachero.delete({ id: '0' })
 
-cachero.scheduler([[12,0]], cachero.batchSave('id'))
+cachero.scheduler([[12,0]])
 ```
 
 <!-- ## Prototype -->

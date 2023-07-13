@@ -23,7 +23,7 @@ export const createCachero = <T>() => {
      * @Tip Scheduler can set multiple time zones -
      * [[1,0],[12,0]] = 01:00, 12:00
      * */
-    scheduler: (times:number[][], preloadData:T[]) => scheduler<T>(info, times, preloadData),
+    scheduler: (times:number[][], preloadData?:T[]) => scheduler<T>(info, times, preloadData),
 
     /** You should setting before use select | create | update | delete*/
     setting: (data:SettingParams<T>) => setting<T>(info, data),
@@ -60,7 +60,7 @@ async function setting<T>(info:ICacheInfo<T>, data:SettingParams<T>) {
   console.log(`Cachero(${table}) setting completed`)
 }
 
-function scheduler<T>(info:ICacheInfo<T>, times:number[][], preloadData:T[]) {
+function scheduler<T>(info:ICacheInfo<T>, times:number[][], preloadData?:T[]) {
   const intervalId = setInterval(() => {
     const now = new Date();
     const currentHour = now.getHours();

@@ -1,8 +1,10 @@
+// type QueryRunner = <T>(queryString:string,params?:ConditionValue[])=>{rows:T[]}
+
 export interface ICacheInfo<T> {
-  queryRunner: null | any;
-  redis: null | Function;
+  queryRunner: {query:any} | null;
+  redis: Function | null;
   data: T[];
-  tableName: null | string;
+  tableName: string | null;
   cachedKey: string[];
   count: number;
   deleted: {
@@ -14,10 +16,10 @@ export interface ICacheInfo<T> {
 
 export interface SettingParams<T> {
   table: ICacheInfo<T>['tableName'],
-  preloadData: ICacheInfo<T>['data'], 
+  preloadData?: ICacheInfo<T>['data'], 
   queryRunner: ICacheInfo<T>['queryRunner'], 
   redis: ICacheInfo<T>['redis'],
-  refKey: ICacheInfo<T>['refKey'],
+  refKey: keyof T,
 }
 
 export interface QueryForm {
