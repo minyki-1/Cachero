@@ -1,40 +1,44 @@
-import { ICacheInfo, QueryForm } from "./types";
+import { Condition, ConditionValue, ICacheInfo, QueryForm } from "./types";
 
-export const select = async <T = Object>(info:ICacheInfo<T>, queryForm:QueryForm, key:string | null) => {
-  const { data, count,cachedKey } = info;
+export const select = async <T>(info:ICacheInfo<T>, queryForm:QueryForm, key:string | null) => {
+  const { data, count, cachedKey, tableName, queryRunner, refKey } = info;
 
-  checkQueryFormVaild(info, queryForm)
+  if(!queryRunner || !tableName || !refKey) throw Error("You should setting before use select");
+
+  checkQueryFormVaild(tableName, queryForm)
 
   const cachedKeyValid = key ? info.cachedKey.includes(key) : false;
+
+  const {column, order, where, offset, limit} = queryForm
 
   if (cachedKeyValid || data.length === count) {
     let resultData:T[] = JSON.parse(JSON.stringify(data));
 
-    if ("column" in queryForm && resultData) resultData = interpretColumn<T>(info, queryForm.column, resultData)
+    if (column && resultData) resultData = interpretColumn(info, column, resultData)
 
-    if ("order" in queryForm && resultData) resultData = interpretOrder<T>(queryForm.order, resultData)
+    if (order && resultData) resultData = interpretOrder<T>(order, resultData)
 
-    if ("where" in queryForm && resultData) resultData = interpretWhere(resultData, queryForm.where)
+    if (where && resultData) resultData = interpretWhere(resultData, where)
 
-    if ("offset" in queryForm && resultData) resultData = resultData?.slice(queryForm.offset)
+    if (offset && resultData) resultData = resultData?.slice(offset)
 
-    if ("limit" in queryForm && resultData) resultData = resultData?.slice(0, queryForm.limit)
+    if (limit && resultData) resultData = resultData?.slice(0, limit)
 
     if (resultData && resultData.length > 0) return resultData
   }
-  const result = await selectQueryResult(info, queryForm)
-  cachedKey.push(key)
+  const result = await selectQueryRun(info, queryForm)
+  if(key && !info.cachedKey.includes(key)) cachedKey.push(key)
   return result
 }
 
-function interpretOrder<T>(orderForm:QueryForm["order"], data:T[]) {
+function interpretOrder<T>(orderForm:string[], data:T[]) {
   return data?.sort((a, b) => compareData<T>(a, b, orderForm));
 }
 
-function compareData<T>(a:T, b:T, keys:QueryForm["order"], index = 0) {
+function compareData<T>(a:T, b:T, keys:string[], index = 0) {
   const keyArray = keys[index].split(" ")
   const order = keyArray.length === 2 ? keyArray[1] : "ASC"
-  const key = keyArray[0];
+  const key = keyArray[0] as keyof T;
   const x = a[key];
   const y = b[key];
 
@@ -46,10 +50,14 @@ function compareData<T>(a:T, b:T, keys:QueryForm["order"], index = 0) {
     }
   }
 
-  if (typeof x === 'number' && typeof y === 'number') {
+  const isNumber = typeof x === 'number' && typeof y === 'number'
+  const isString = typeof x === 'string' && typeof y === 'string'
+  const isDate = isString && isDateString(x) && isDateString(y)
+
+  if (isNumber) {
     if (order === "DESC") return y - x;
     else return x - y;
-  } else if (isDateString(x) && isDateString(y)) {
+  } else if (isDate) {
     // @ts-ignore
     if (order === "DESC") return new Date(y) - new Date(x);
     // @ts-ignore
@@ -68,13 +76,13 @@ function compareData<T>(a:T, b:T, keys:QueryForm["order"], index = 0) {
   }
 }
 
-function interpretColumn<T>(info:ICacheInfo<T>, columnForm:QueryForm["column"], data:T[]) {
+function interpretColumn<T>(info:ICacheInfo<T>, columnForm:string[], data:T[]) {
   const { tableName, tableColumns } = info
   const columnList:string[] = []
 
   columnForm.forEach((column) => {
     const dotResult = column.match(/\.(\w+)/);
-    const isIncludeNotTableName = column.includes(".*") && !column.includes(tableName);
+    const isIncludeNotTableName = column.includes(".*") && tableName && !column.includes(tableName);
     const isIncludeAS = column.includes(" AS ") ? " AS " : null || column.includes(" as ") ? " as " : null
     let resultColumn = column;
     if (isIncludeAS) {
@@ -91,11 +99,11 @@ function interpretColumn<T>(info:ICacheInfo<T>, columnForm:QueryForm["column"], 
   })
 
   let isIncorrectColumn = false
-  const result:T[] = data.map((obj) => {
-    const filteredObj:any = {};
+  const result = data.map((obj) => {
+    const filteredObj = {} as T;
     columnList.forEach((key) => {
-      if (obj.hasOwnProperty(key)) {
-        filteredObj[key] = obj[key];
+      if ((obj as Object).hasOwnProperty(key)) {
+        filteredObj[key as keyof T] = obj[key as keyof T];
       } else {
         isIncorrectColumn = true
       }
@@ -107,70 +115,82 @@ function interpretColumn<T>(info:ICacheInfo<T>, columnForm:QueryForm["column"], 
   return result
 }
 
-async function selectQueryResult<T>(info:ICacheInfo<T>, queryForm:QueryForm) {
-  const { queryRunner, tableName, deleted, data, redis } = info
-  const queryProps:any[] = []
-  const where = queryForm.where ? "WHERE " + queryForm.where.result.map((condition) => {
+function getWhereQuery(queryProps:ConditionValue[], where:QueryForm["where"]) {
+  if(!where) return ""
+  return "WHERE " + where.result.map((condition) => {
     if (condition === "&&" || condition === "||") return condition
-    if (!(condition in queryForm.where) || queryForm.where[condition].length !== 3) throw Error("Result contains undefined conditions")
-    const [key, operator, value] = queryForm.where[condition]
-    if (operator === "IN" || operator === "NOT IN") {
-      return key + operator + `(${Array.isArray(value) ? value.map((valueData) => {
+
+    if (!(condition in where) || where[condition].length !== 3) throw Error("Result contains undefined conditions")
+    
+    const [key, operator, value] = where[condition]
+
+    const operatorIsIN = operator === "IN" || operator === "NOT IN"
+    if (operatorIsIN && Array.isArray(value)) {
+      const result = value.map((valueData) => {
         queryProps.push(valueData);
         return `$${queryProps.length}`;
-      }).join(',') : () => {
-        queryProps.push(value);
-        return `$${queryProps.length}`;
-      }})`
-    } else {
-      queryProps.push(value)
-      return `${key} ${operator} $${queryProps.length}`
+      }).join(',')
+      return result
     }
-  }).join(" ") : ""
+    queryProps.push(value)
+    return `${key} ${operator} $${queryProps.length}`
+  }).join(" ")
+}
 
-  const join = queryForm.join ? "JOIN " + queryForm.join : ""
-  const columnList = queryForm.column ? queryForm.column.join(", ") : '*'
-  const order = queryForm.order ? "ORDER BY " + queryForm.order.join(", ") : ""
-  const limit = queryForm.limit ? "LIMIT " + queryForm.limit : ""
-  const offset = queryForm.offset ? "OFFSET " + queryForm.offset : ""
+async function selectQueryRun<T>(info:ICacheInfo<T>, queryForm:QueryForm) {
+  const { queryRunner, tableName, deleted, data, redis, refKey } = info
+  
+  if(!queryRunner || !tableName || !refKey) throw Error("You should setting before use select");
+
+  const {where,join,column,order,limit,offset} = queryForm
+  
+  const queryProps:ConditionValue[] = []
+  const whereQuery = getWhereQuery(queryProps, where)
+  const joinQuery = join ? "JOIN " + join : ""
+  const columnQuery = column ? column.join(", ") : '*'
+  const orderQuery = order ? "ORDER BY " + order.join(", ") : ""
+  const limitQuery = limit ? "LIMIT " + limit : ""
+  const offsetQuery = offset ? "OFFSET " + offset : ""
+
   const result:{rows:T[]} = await queryRunner(`
-    SELECT ${columnList}
+    SELECT ${columnQuery}
     FROM ${tableName}
-    ${join}
-    ${where}
-    ${order}
-    ${limit}
-    ${offset};
+    ${joinQuery}
+    ${whereQuery}
+    ${orderQuery}
+    ${limitQuery}
+    ${offsetQuery};
   `, queryProps);
 
   for (const [key, value] of Object.entries(deleted)) {
-    result.rows.forEach((resultData, index) => {
-      if (resultData[key] === value) delete result.rows[index]
+    result.rows.forEach((data, index) => {
+      if (data[key as keyof T] === value) delete result.rows[index]
     })
   }
-  // TODO: Select할때 가져오는 데이터를 병합할때 기준이되는 값을 어떻게 할지 
   const selectResult:T[] = JSON.parse(JSON.stringify(result.rows))
   selectResult.forEach(newObj => {
-    const existingObjIndex = data.findIndex(obj => obj.id === newObj.id);
+    const existingObjIndex = data.findIndex(obj => obj[refKey] === newObj[refKey]);
     if (existingObjIndex !== -1) {
-      data[existingObjIndex] = { ...data[existingObjIndex], ...newObj }; // 이미 있는 오브젝트를 덮어씌우면서 새로운 키를 추가
+      data[existingObjIndex] = { ...data[existingObjIndex], ...newObj };
     } else {
-      data.push(newObj); // 새로운 오브젝트를 추가
+      data.push(newObj);
     }
   });
   if (redis) redis(tableName, JSON.stringify(data))
   return result.rows
 }
 
-function checkQueryFormVaild({ tableName }, queryForm) {
-  queryForm.column.forEach((column) => {
+function checkQueryFormVaild(tableName:string, queryForm:QueryForm) {
+  const {column} = queryForm
+
+  column?.forEach((column) => {
     if (column.includes(".*") && !column.includes(tableName)) {
       throw Error(`You can't send column like this: anotherTable.*`);
     }
   })
 }
 
-function isDateString(inputString) {
+function isDateString(inputString:string) {
   const datePattern = /^\d{4}-\d{2}-\d{2}$/;
   const timestampPattern = /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/;
   const timestampWithTimeZonePattern = /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2} [+-]\d{2}:\d{2}$/;
@@ -182,19 +202,21 @@ function isDateString(inputString) {
 }
 
 
-function evaluateCondition(condition, item) {
+function evaluateCondition<T>(condition:Condition, data:T):boolean {
   const [condKey, operator, value] = condition;
 
   if (condKey.includes(" AS ") || condKey.includes(" as ")) throw Error("Where's condition cannot contain 'AS'");
 
-  const key = condKey.split('.')[0]
+  const key = condKey.split('.')[0] as keyof T
+  const dataValue = data[key] as string
 
-  function checkLikeData() {
-    const checkEndData = item[key][0] === "%";
-    const checkStartData = item[key][item[key].length - 1] === "%";
+  function checkLikeData():boolean {
+    if(typeof value !== "string") return false;
+    const checkEndData = dataValue[0] === "%";
+    const checkStartData = dataValue[dataValue.length - 1] === "%";
     const onlyValue = value.replace(/\%/g, '');
-    const isEndsWith = item[key].endsWith(onlyValue)
-    const isStartsWith = item[key].startsWith(onlyValue)
+    const isEndsWith = dataValue.endsWith(onlyValue)
+    const isStartsWith = dataValue.startsWith(onlyValue)
 
     if (checkEndData && !checkStartData) return isEndsWith
     else if (!checkEndData && checkStartData) return isStartsWith
@@ -202,46 +224,49 @@ function evaluateCondition(condition, item) {
   }
   switch (operator) {
     case '=':
-      return item[key] == value;
+      return data[key] == value;
     case '==':
-      return item[key] == value;
+      return data[key] == value;
     case '!=':
-      return item[key] != value;
+      return data[key] != value;
     case '<>':
-      return item[key] != value;
+      return data[key] != value;
     case '>':
-      return item[key] > value;
+      return data[key] > value;
     case '<':
-      return item[key] < value;
+      return data[key] < value;
     case '>=':
-      return item[key] >= value;
+      return data[key] >= value;
     case '<=':
-      return item[key] <= value;
+      return data[key] <= value;
     case 'IN':
-      return value.includes(item[key]);
+      if(!Array.isArray(value)) throw Error("In or Not In operator must give the array a value"); 
+      return value.includes(dataValue);
     case 'NOT IN':
-      return !value.includes(item[key]);
+      if(!Array.isArray(value)) throw Error("In or Not In operator must give the array a value"); 
+      return !value.includes(dataValue);
     case 'ILIKE':
       return checkLikeData()
     case 'LIKE':
       return checkLikeData()
     default:
-      return true;
+      return false;
   }
 }
 
-function interpretWhere(data, conditions) {
+function interpretWhere<T>(data:T[], conditions:QueryForm["where"]) {
+  if(!conditions) return data
   return data?.filter((filterData) => {
-    const totalCondition = {}
+    const totalCondition:{[key:string]:boolean} = {}
     Object.keys(conditions).forEach((key) => {
       if (key === "result") return;
       totalCondition[key] = evaluateCondition(conditions[key], filterData)
     })
-    const resultCon = conditions.result.map((result) => {
+    const resultConition = conditions.result.map((result) => {
       if (result === "&&" || result === "||") return result
       else if (result in totalCondition) return String(totalCondition[result])
       throw Error("Result contains undefined conditions")
     }).join(" ")
-    return eval(resultCon)
+    return eval(resultConition)
   })
 }

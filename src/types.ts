@@ -6,26 +6,34 @@ export interface ICacheInfo<T> {
   cachedKey: string[];
   count: number;
   deleted: {
-    [P in keyof T]?: T[P]
+    [key:string]: T[keyof T]
   };
   tableColumns: string[];
+  refKey: null | keyof T;
 }
 
 export interface SettingParams<T> {
-  table: ICacheInfo<T>['tableName'], 
+  table: ICacheInfo<T>['tableName'],
   preloadData: ICacheInfo<T>['data'], 
   queryRunner: ICacheInfo<T>['queryRunner'], 
-  redis: ICacheInfo<T>['redis']
+  redis: ICacheInfo<T>['redis'],
+  refKey: ICacheInfo<T>['refKey'],
 }
 
 export interface QueryForm {
   column?:string[];
   order?:string[];
-  where?:{
-    [key:string]:string[];
-    result:string[];
-  };
+  where?:{[key:string]:Condition} & {result:string[]};
   join?:string;
   offset?:number;
   limit?:number;
 }
+
+
+export type Operator = '=' | '==' | '!=' | '<>' | '>' | '<' | '>=' | '<=' | 'IN' | 'NOT IN' | 'ILIKE' | 'LIKE'
+
+type Value = string | number | boolean | Date
+
+export type ConditionValue = Value | Value[];
+
+export type Condition = [string, Operator, ConditionValue]

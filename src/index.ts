@@ -5,7 +5,7 @@ import { update } from "./update.js"
 import { batchSave } from "./batchSave.js"
 import { ICacheInfo, QueryForm, SettingParams } from "./types.js"
 
-export const createCachero = <T=Object>() => {
+export const createCachero = <T>() => {
   const info:ICacheInfo<T> = {
     queryRunner: null,
     redis: null,
@@ -15,6 +15,7 @@ export const createCachero = <T=Object>() => {
     count: 0,
     deleted: {},
     tableColumns: [],
+    refKey:null
   };
 
   return {
@@ -41,15 +42,17 @@ export const createCachero = <T=Object>() => {
 }
 
 async function setting<T>(info:ICacheInfo<T>, data:SettingParams<T>) {
-  const { table, preloadData, queryRunner, redis } = data
+  const { table, preloadData, queryRunner, redis, refKey } = data
+  if(!queryRunner || !table || !refKey) throw Error("You should setting information");
   info.tableName = table;
   info.queryRunner = queryRunner;
+  info.refKey = refKey;
   const columnNameResult = await queryRunner(`
     SELECT column_name
     FROM information_schema.columns
     WHERE table_name = '${table}';
   `)
-  info.tableColumns = columnNameResult.rows.map((row) => row.column_name);
+  info.tableColumns = columnNameResult.rows.map(({column_name}:{column_name:string}) => column_name);
   if (preloadData) info.data = [...preloadData];
   if (redis) info.redis = redis;
   const countResult = await queryRunner(`SELECT COUNT(*) FROM ${table};`);

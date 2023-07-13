@@ -1,7 +1,9 @@
-export async function batchSave(info, key, preloadData) {
+import { ICacheInfo } from "types"
+
+export async function batchSave<T>(info:ICacheInfo<T>, preloadData:T[]) {
   const { data, cachedKey } = info
 
-  upsertData(info, key)
+  upsertData<T>(info)
 
   deleteData(info)
 
@@ -11,37 +13,43 @@ export async function batchSave(info, key, preloadData) {
   if (preloadData && Array.isArray(preloadData)) data.push(...preloadData)
 }
 
-async function upsertData({ tableName, tableColumns, data, queryRunner }, key) {
+async function upsertData<T>(info:ICacheInfo<T>) {
+  const {queryRunner, tableName, tableColumns, data, refKey} = info
+
+  if(!queryRunner || !tableName || !refKey) throw Error("You should setting before use select");
+
   const upsertQuery = `
     INSERT INTO ${tableName} (${tableColumns.join(", ")})
     VALUES
       ${data.map((_, index) => `(${tableColumns.map((_, key) => `$${(index * tableColumns.length) + (key + 1)}`).join(', ')})`).join(', ')}
-    ON CONFLICT (${key}) DO UPDATE
+    ON CONFLICT (${String(refKey)}) DO UPDATE
     SET
       ${tableColumns.map((column) => `${column} = COALESCE(EXCLUDED.${column}, ${tableName}.${column}`).join(", ")}
   `;
 
-  const queryValues = []
+  const queryValues:T[keyof T][] = []
   data.forEach((value) => {
     tableColumns.forEach((column) => {
-      queryValues.push(value[column])
+      queryValues.push(value[column as keyof T])
     })
   })
 
   await queryRunner(upsertQuery, queryValues);
 }
 
-async function deleteData({ deleted, tableName, queryRunner }) {
-  const deleteData = {}
-  deleted.forEach(({ key, value }) => {
+async function deleteData<T>(info:ICacheInfo<T>) {
+  const { deleted, tableName, queryRunner } = info
+  if(!queryRunner || !tableName) throw Error("You should setting before use select");
+  const deleteData:{[key:string]:T[keyof T][]} = {}
+  for (const [key, value] of Object.entries(deleted)) {
     if (key in deleteData) deleteData[key].push(value)
     else deleteData[key] = [value]
-  })
+  }
   const deleteQuery = `
     DELETE FROM ${tableName}
     WHERE ${Object.keys(deleteData).map((key, index1) => `${key} IN (${deleteData[key].map((_, index2) => `$${(index1 * deleteData[key].length) + (index2 + 1)}`).join(', ')})`).join(' OR ')};
   `
-  const queryValues = []
+  const queryValues:T[keyof T][] = []
   Object.keys(deleteData).forEach((key) => {
     queryValues.push(...deleteData[key])
   })
