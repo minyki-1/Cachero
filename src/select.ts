@@ -14,11 +14,11 @@ export const select = async <T>(info:ICacheInfo<T>, queryForm:QueryForm, key:str
   if (cachedKeyValid || data.length === count) {
     let resultData:T[] = JSON.parse(JSON.stringify(data));
 
-    if (column && resultData) resultData = interpretColumn(info, column, resultData)
+    if (column && resultData) resultData = interpretColumn<T>(info, column, resultData)
 
     if (order && resultData) resultData = interpretOrder<T>(order, resultData)
 
-    if (where && resultData) resultData = interpretWhere(resultData, where)
+    if (where && resultData) resultData = interpretWhere<T>(resultData, where)
 
     if (offset && resultData) resultData = resultData?.slice(offset)
 
@@ -26,7 +26,7 @@ export const select = async <T>(info:ICacheInfo<T>, queryForm:QueryForm, key:str
 
     if (resultData && resultData.length > 0) return resultData
   }
-  const result = await selectQueryRun(info, queryForm)
+  const result = await selectQueryRun<T>(info, queryForm)
   if(key && !info.cachedKey.includes(key)) cachedKey.push(key)
   return result
 }

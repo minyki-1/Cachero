@@ -23,7 +23,7 @@ export const createCachero = <T>() => {
      * @Tip Scheduler can set multiple time zones -
      * [[1,0],[12,0]] = 01:00, 12:00
      * */
-    scheduler: (times:number[][], key:keyof T, preloadData:T[]) => scheduler<T>(info, times, preloadData),
+    scheduler: (times:number[][], preloadData:T[]) => scheduler<T>(info, times, preloadData),
 
     /** You should setting before use select | create | update | delete*/
     setting: (data:SettingParams<T>) => setting<T>(info, data),
