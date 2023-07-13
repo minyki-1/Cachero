@@ -54,7 +54,7 @@ function setting(info, data) {
         info.tableName = table;
         info.queryRunner = queryRunner;
         info.refKey = refKey;
-        const columnNameResult = yield queryRunner(`
+        const columnNameResult = yield queryRunner.query(`
     SELECT column_name
     FROM information_schema.columns
     WHERE table_name = '${table}';
@@ -64,7 +64,7 @@ function setting(info, data) {
             info.data = [...preloadData];
         if (redis)
             info.redis = redis;
-        const countResult = yield queryRunner(`SELECT COUNT(*) FROM ${table};`);
+        const countResult = yield queryRunner.query(`SELECT COUNT(*) FROM ${table};`);
         info.count = countResult;
         console.log(`Cachero(${table}) setting completed`);
     });

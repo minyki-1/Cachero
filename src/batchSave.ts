@@ -34,7 +34,7 @@ async function upsertData<T>(info:ICacheInfo<T>) {
     })
   })
 
-  await queryRunner(upsertQuery, queryValues);
+  await queryRunner.query(upsertQuery, queryValues);
 }
 
 async function deleteData<T>(info:ICacheInfo<T>) {
@@ -49,5 +49,5 @@ async function deleteData<T>(info:ICacheInfo<T>) {
     queryValues.push(...deleted[key])
   })
 
-  await queryRunner(deleteQuery, queryValues);
+  await queryRunner.query(deleteQuery, queryValues);
 }

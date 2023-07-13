@@ -47,7 +47,7 @@ async function setting<T>(info:ICacheInfo<T>, data:SettingParams<T>) {
   info.tableName = table;
   info.queryRunner = queryRunner;
   info.refKey = refKey;
-  const columnNameResult = await queryRunner(`
+  const columnNameResult = await queryRunner.query(`
     SELECT column_name
     FROM information_schema.columns
     WHERE table_name = '${table}';
@@ -55,7 +55,7 @@ async function setting<T>(info:ICacheInfo<T>, data:SettingParams<T>) {
   info.tableColumns = columnNameResult.rows.map(({column_name}:{column_name:string}) => column_name);
   if (preloadData) info.data = [...preloadData];
   if (redis) info.redis = redis;
-  const countResult = await queryRunner(`SELECT COUNT(*) FROM ${table};`);
+  const countResult = await queryRunner.query(`SELECT COUNT(*) FROM ${table};`);
   info.count = countResult;
   console.log(`Cachero(${table}) setting completed`)
 }

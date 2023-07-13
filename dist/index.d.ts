@@ -1,4 +1,4 @@
-import { QueryForm, SettingParams } from "./types.js";
+import { QueryForm, SettingParams } from "./types.ts";
 export declare const createCachero: <T>() => {
     /**
      * @Tip Scheduler can set multiple time zones -

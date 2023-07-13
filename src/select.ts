@@ -150,7 +150,7 @@ async function selectQueryRun<T>(info:ICacheInfo<T>, queryForm:QueryForm) {
   const limitQuery = limit ? "LIMIT " + limit : ""
   const offsetQuery = offset ? "OFFSET " + offset : ""
 
-  const result:{rows:T[]} = await queryRunner(`
+  const result:{rows:T[]} = await queryRunner.query(`
     SELECT ${columnQuery}
     FROM ${tableName}
     ${joinQuery}

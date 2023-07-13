@@ -150,7 +150,7 @@ async function selectQueryRun(info, queryForm) {
     const orderQuery = order ? "ORDER BY " + order.join(", ") : "";
     const limitQuery = limit ? "LIMIT " + limit : "";
     const offsetQuery = offset ? "OFFSET " + offset : "";
-    const result = await queryRunner(`
+    const result = await queryRunner.query(`
     SELECT ${columnQuery}
     FROM ${tableName}
     ${joinQuery}

@@ -41,7 +41,7 @@ function upsertData(info) {
                 queryValues.push(value[column]);
             });
         });
-        yield queryRunner(upsertQuery, queryValues);
+        yield queryRunner.query(upsertQuery, queryValues);
     });
 }
 function deleteData(info) {
@@ -57,6 +57,6 @@ function deleteData(info) {
         Object.keys(deleted).forEach((key) => {
             queryValues.push(...deleted[key]);
         });
-        yield queryRunner(deleteQuery, queryValues);
+        yield queryRunner.query(deleteQuery, queryValues);
     });
 }

@@ -164,7 +164,7 @@ function selectQueryRun(info, queryForm) {
         const orderQuery = order ? "ORDER BY " + order.join(", ") : "";
         const limitQuery = limit ? "LIMIT " + limit : "";
         const offsetQuery = offset ? "OFFSET " + offset : "";
-        const result = yield queryRunner(`
+        const result = yield queryRunner.query(`
     SELECT ${columnQuery}
     FROM ${tableName}
     ${joinQuery}

@@ -25,7 +25,7 @@ async function upsertData(info) {
             queryValues.push(value[column]);
         });
     });
-    await queryRunner(upsertQuery, queryValues);
+    await queryRunner.query(upsertQuery, queryValues);
 }
 async function deleteData(info) {
     const { deleted, tableName, queryRunner } = info;
@@ -39,5 +39,5 @@ async function deleteData(info) {
     Object.keys(deleted).forEach((key) => {
         queryValues.push(...deleted[key]);
     });
-    await queryRunner(deleteQuery, queryValues);
+    await queryRunner.query(deleteQuery, queryValues);
 }

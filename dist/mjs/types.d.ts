@@ -1,5 +1,5 @@
 export interface ICacheInfo<T> {
-    queryRunner: null | Function;
+    queryRunner: null | any;
     redis: null | Function;
     data: T[];
     tableName: null | string;
