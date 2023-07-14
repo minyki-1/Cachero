@@ -1,15 +1,15 @@
 # Cachero
 
-Enable cache all CRUD operations, a library for [Node.js](http://nodejs.org).
+*Enable cache all CRUD operations, a library for [Node.js](http://nodejs.org).*
 
 ```js
 const { createCachero } = require('cachero')
 
 const cachero = createCachero()
 
-await cachero.setting({ table, preloadData, pool, redis })
+await cachero.setting({ table, queryRunner })
 
-const result = await cachero.select({ column: ['*'] }, 'key')
+const result = await cachero.select()
 ```
 
 <br>
@@ -26,11 +26,11 @@ $ npm install cachero
 
 ## Features
 
+  * Easy CRUD caching
   * Low latency CRUD
-  * Easy CRUD cache
   * Reduces server load
   * Look-Aside + Write-Back caching
-  * Easier than most ORM
+  * Easier syntax than most ORM
 
 <br>
 
@@ -54,10 +54,6 @@ app.get('/post', function (req, res) {
   const result = await postCachero.select({ 
     column: ['*']
   }, cachedKey)
-  /* 
-    Cached Key is used to determine whether the value is valid when reading multiple data. 
-    You do not need to use it to get one data that you have already cached.
-  */
 
   res.json(result)
 })
@@ -66,13 +62,13 @@ app.listen(3000, async () => {
   await pool.connect()
   await redis.connect()
 
-  await postCachero.setting({ table: 'post', queryRunner: pool, redis })
+  await postCachero.setting({ table: 'post', refKey: 'id', queryRunner: pool, redis })
 });
 ```
 
 <br/>
 
-More Clauses
+More Usage
 ```js
 postCachero.select({
   column: [
@@ -89,7 +85,7 @@ postCachero.select({
   join: 'users ON lab.maker_id = users.id',
   limit: 0,
   offset: 0
-}, 'key')
+})
 ```
 
 <br/>
@@ -105,7 +101,28 @@ cachero.delete({ id: '0' })
 cachero.scheduler([[12,0]])
 ```
 
-<!-- ## Prototype -->
+<br>
+
+## setting
+- You shuold setting before use cachero
+- `refKey` is used as a reference value for saving, updating, and deleting data
+- You don't have to send `preloadData`, `redis`
+- If you send `preloadData`, it's saved and used before cachero get the data
+- If you send `redis`, the data is also saved in redis 
+  when data is saved in memory, which greatly increases stability
+
+## select
+- After you get all the columns of multiple data into `*` or `table.*`, 
+  if you get the detailed data of one of them again, 
+  cachero don't run sql query, so it's good for performance.
+- `cachedKey` is used to determine whether the value is valid when reading multiple data. 
+  Use it when you get multiple data, if you get the detailed data of one of them again, it doesn't have to be used
+
+## delete
+- You can erase only one specific value with an id value, 
+  but even if you send another key value, it erases all that data
+
+<br>
 
 ## License
 

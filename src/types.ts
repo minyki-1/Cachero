@@ -18,7 +18,7 @@ export interface SettingParams<T> {
   table: ICacheInfo<T>['tableName'],
   preloadData?: ICacheInfo<T>['data'], 
   queryRunner: ICacheInfo<T>['queryRunner'], 
-  redis: ICacheInfo<T>['redis'],
+  redis?: ICacheInfo<T>['redis'],
   refKey: keyof T,
 }
 
