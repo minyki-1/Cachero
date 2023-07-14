@@ -118,9 +118,9 @@ function getWhereQuery(queryProps:ConditionValue[], where:QueryForm["where"]) {
   return "WHERE " + where.result.map((condition) => {
     if (condition === "&&" || condition === "||") return condition
 
-    if (!(condition in where) || where[condition].length !== 3) throw Error("Result contains undefined conditions")
+    if (!(String(condition) in where) || where[String(condition)].length !== 3) throw Error("Result contains undefined conditions")
     
-    const [key, operator, value] = where[condition]
+    const [key, operator, value] = where[String(condition)]
 
     const operatorIsIN = operator === "IN" || operator === "NOT IN"
     if (operatorIsIN && Array.isArray(value)) {
@@ -258,11 +258,11 @@ function interpretWhere<T>(data:T[], conditions:QueryForm["where"]) {
     const totalCondition:{[key:string]:boolean} = {}
     Object.keys(conditions).forEach((key) => {
       if (key === "result") return;
-      totalCondition[key] = evaluateCondition(conditions[key], filterData)
+      totalCondition[key] = evaluateCondition(conditions[key] as Condition, filterData)
     })
     const resultConition = conditions.result.map((result) => {
       if (result === "&&" || result === "||") return result
-      else if (result in totalCondition) return String(totalCondition[result])
+      else if (String(result) in totalCondition) return String(totalCondition[String(result)])
       throw Error("Result contains undefined conditions")
     }).join(" ")
     return eval(resultConition)
