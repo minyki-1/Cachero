@@ -25,7 +25,9 @@ export interface SettingParams<T> {
 export interface QueryForm {
   column?:string[];
   order?:string[];
-  where?:{[key:string]:Condition} & {result:string[]};
+  where?:{
+    [key:string | "result"]:Condition | string[],
+  };
   join?:string;
   offset?:number;
   limit?:number;
