@@ -174,7 +174,7 @@ async function selectQueryRun<T>(info:ICacheInfo<T>, queryForm:QueryForm) {
       data.push(newObj);
     }
   });
-  if (redis) redis(tableName, JSON.stringify(data))
+  if (redis) redis.set(tableName, JSON.stringify(data))
   return result.rows
 }
 

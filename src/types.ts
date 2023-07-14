@@ -2,7 +2,7 @@
 
 export interface ICacheInfo<T> {
   queryRunner: {query:any} | null;
-  redis: Function | null;
+  redis: {set:any} | null;
   data: T[];
   tableName: string | null;
   cachedKey: string[];

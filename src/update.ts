@@ -12,7 +12,7 @@ export function update<T>(info:ICacheInfo<T>, newData:T[] | T) {
     mergeData<T>(data, refKey, updateData);
   }
 
-  if (redis) redis(tableName, JSON.stringify(data))
+  if (redis) redis.set(tableName, JSON.stringify(data))
 }
 
 function mergeData<T>(data:T[], key:keyof T, updateData:T) {

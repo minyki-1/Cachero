@@ -12,5 +12,5 @@ export function deleteData<T>(info:ICacheInfo<T>, condition:{[key:string]: T[key
     })
   });
 
-  if (redis) redis(tableName, JSON.stringify(data))
+  if (redis) redis.set(tableName, JSON.stringify(data))
 }
