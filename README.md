@@ -92,6 +92,8 @@ postCachero.select({
 
 Create, Update, Delete, Scheduler Example
 ```js
+// Create, Update, Delete have to send a refKey
+
 cachero.create({ id:'0', title:'new data' })
 
 cachero.update({ id:'0', title:'update data' })

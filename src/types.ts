@@ -1,5 +1,3 @@
-// type QueryRunner = <T>(queryString:string,params?:ConditionValue[])=>{rows:T[]}
-
 export interface ICacheInfo<T> {
   queryRunner: {query:any} | null;
   redis: {set:any} | null;

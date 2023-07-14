@@ -1,14 +1,16 @@
 import { ICacheInfo } from "types";
 
-export function update<T>(info:ICacheInfo<T>, newData:T[] | T) {
+export function update<T>(info:ICacheInfo<T>, newData:T | T[]) {
   const { data, redis, tableName, refKey } = info
   if(!tableName || !refKey) throw Error("You should setting before use select");
-  const updateData:T[] | T = JSON.parse(JSON.stringify(newData))
+  const updateData:T | T[] = JSON.parse(JSON.stringify(newData))
   if (Array.isArray(updateData)) {
-    updateData.forEach(newData => {
-      mergeData<T>(data, refKey, newData);
+    updateData.forEach(value => {
+      if(!(value as Object).hasOwnProperty(refKey)) throw Error(`New data for update must have ${String(refKey)} value`);
+      mergeData<T>(data, refKey, value);
     });
   } else {
+    if(!(updateData as Object).hasOwnProperty(refKey)) throw Error(`New data for update must have ${String(refKey)} value`);
     mergeData<T>(data, refKey, updateData);
   }
 

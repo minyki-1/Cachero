@@ -35,7 +35,7 @@ export const createCachero = <T>() => {
     create: (newData:T) => { create<T>(info, newData); info.count++; },
 
     /** @Tip Updated data will be applied immediately*/
-    update: (newData:T[]) => { update<T>(info, newData); info.count--; },
+    update: (newData:T | T[]) => { update<T>(info, newData); info.count--; },
     delete: (condition:{[key:string]: T[keyof T]}) => deleteData(info, condition),
     batchSave: (preloadData:T[]) => batchSave(info, preloadData),
   }
