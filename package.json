@@ -1,6 +1,6 @@
 {
   "name": "cachero",
-  "version": "1.0.12",
+  "version": "1.0.13",
   "description": "Enable cache all CRUD operations, a library for [Node.js](http://nodejs.org).",
   "main": "dist/cjs/index.js",
   "module": "dist/mjs/index.js",

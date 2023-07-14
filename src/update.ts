@@ -1,5 +1,6 @@
 import { ICacheInfo } from "types";
 
+// TODO: Update 전에 데이터가 없을 경우 어떻게 할지
 export function update<T>(info:ICacheInfo<T>, newData:T | T[]) {
   const { data, redis, tableName, refKey } = info
   if(!tableName || !refKey) throw Error("You should setting before use select");

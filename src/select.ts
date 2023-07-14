@@ -7,7 +7,7 @@ export const select = async <T>(info:ICacheInfo<T>, queryForm:QueryForm, key:str
 
   checkQueryFormVaild(tableName, queryForm)
 
-  const cachedKeyValid = key ? info.cachedKey.includes(key) : false;
+  const cachedKeyValid = key ? info.cachedKey.includes(key) : true;
 
   const {column, order, where, offset, limit} = queryForm
 
@@ -254,6 +254,7 @@ function evaluateCondition<T>(condition:Condition, data:T):boolean {
 
 function interpretWhere<T>(data:T[], conditions:QueryForm["where"]) {
   if(!conditions) return data
+  if(!conditions.hasOwnProperty("result")) throw Error("Where must contain result")
   return data?.filter((filterData) => {
     const totalCondition:{[key:string]:boolean} = {}
     Object.keys(conditions).forEach((key) => {
