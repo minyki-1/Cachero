@@ -2,6 +2,8 @@
 
 *Enable cache all CRUD operations, a library for [Node.js](http://nodejs.org).*
 
+![Cachero Logo](cachero.png "Cachero Logo")
+
 ```js
 const { createCachero } = require('cachero')
 
