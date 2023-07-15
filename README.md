@@ -27,7 +27,8 @@ $ npm install cachero
 ## Features
 
   * Easy CRUD caching
-  * Low latency CRUD
+  * Very low latency
+  * Minimize the use of DB
   * Reduces server load
   * Look-Aside + Write-Back caching
   * Easier syntax than most ORM
@@ -82,7 +83,7 @@ postCachero.select({
     condition2: ['like_count', '>=', '10'],
     result: ['condition1', '&&', 'condition2']
   },
-  join: 'users ON lab.maker_id = users.id',
+  join: 'users ON post.maker_id = users.id',
   limit: 0,
   offset: 0
 })
